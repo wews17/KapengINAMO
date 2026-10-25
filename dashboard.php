@@ -16,8 +16,19 @@ try {
         $stats['pending_orders'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn();
         $stats['menu_items'] = $pdo->query("SELECT COUNT(*) FROM menu_items")->fetchColumn();
 
-        // Recent orders
-        $recent_orders = $pdo->query("SELECT o.*, u.full_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5")->fetchAll();
+        // Recent orders with calculated total from order_items
+        $recent_orders = $pdo->query("
+            SELECT o.*, u.full_name,
+               COALESCE(
+                   (SELECT SUM(subtotal) FROM order_items WHERE order_id = o.id),
+                   o.total_amount,
+                   0
+               ) as calculated_total
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.id
+            ORDER BY o.created_at DESC
+            LIMIT 5
+        ")->fetchAll();
 
         // Most favorite products (top ordered items)
         $favorite_products = $pdo->query("
@@ -36,16 +47,38 @@ try {
         $stats['preparing_orders'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'preparing'")->fetchColumn();
         $stats['completed_orders'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn();
 
-        // Recent orders
-        $recent_orders = $pdo->query("SELECT o.*, u.full_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5")->fetchAll();
+        // Recent orders with calculated total from order_items
+        $recent_orders = $pdo->query("
+            SELECT o.*, u.full_name,
+               COALESCE(
+                   (SELECT SUM(subtotal) FROM order_items WHERE order_id = o.id),
+                   o.total_amount,
+                   0
+               ) as calculated_total
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.id
+            ORDER BY o.created_at DESC
+            LIMIT 5
+        ")->fetchAll();
     } else {
         // Customer stats
         $user_id = $_SESSION['user_id'];
         $stats['total_orders'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE user_id = $user_id")->fetchColumn();
         $stats['total_spent'] = $pdo->query("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE user_id = $user_id")->fetchColumn();
 
-        // Recent orders
-        $recent_orders = $pdo->query("SELECT * FROM orders WHERE user_id = $user_id ORDER BY created_at DESC LIMIT 5")->fetchAll();
+        // Recent orders with calculated total from order_items
+        $recent_orders = $pdo->query("
+            SELECT o.*,
+               COALESCE(
+                   (SELECT SUM(subtotal) FROM order_items WHERE order_id = o.id),
+                   o.total_amount,
+                   0
+               ) as calculated_total
+            FROM orders o
+            WHERE o.user_id = $user_id
+            ORDER BY o.created_at DESC
+            LIMIT 5
+        ")->fetchAll();
 
         // Get menu items by category
         $menu_categories = $pdo->query("SELECT * FROM menu_categories ORDER BY name")->fetchAll();
@@ -338,7 +371,7 @@ try {
                                 <?php if (isAdmin() || isStaff()): ?>
                                     <td><?php echo htmlspecialchars($order['full_name'] ?? 'Guest'); ?></td>
                                 <?php endif; ?>
-                                <td>₱<?php echo number_format($order['total_amount'], 2); ?></td>
+                                <td>₱<?php echo number_format($order['calculated_total'], 2); ?></td>
                                 <td><span class="badge badge-<?php echo $order['status']; ?>"><?php echo ucfirst($order['status']); ?></span></td>
                                 <td><?php echo date('M d, Y H:i', strtotime($order['created_at'])); ?></td>
                             </tr>

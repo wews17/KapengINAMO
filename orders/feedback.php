@@ -4,6 +4,12 @@ require_once '../includes/session.php';
 
 requireLogin();
 
+// Redirect customers to my_orders page since the modal is now there
+if (isCustomer() && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Location: /KapengINAMO/orders/my_orders.php');
+    exit;
+}
+
 $message = '';
 $messageType = '';
 
@@ -47,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Insert feedback
                 $stmt = $pdo->prepare("INSERT INTO order_feedback (order_id, user_id, rating, comment) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$order_id, $user_id, $rating, $comment]);
-                $message = 'Thank you for your feedback!';
-                $messageType = 'success';
+                header('Location: /KapengINAMO/orders/my_orders.php?success=feedback');
+                exit;
             }
         }
     } catch(PDOException $e) {

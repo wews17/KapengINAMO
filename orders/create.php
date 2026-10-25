@@ -35,9 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customer_name = trim($_POST['customer_name']);
     $payment_method = $_POST['payment_method'];
     $notes = trim($_POST['notes']);
-    $items = $_POST['items'];
+    $items = isset($_POST['items']) ? json_decode($_POST['items'], true) : [];
 
-    if (empty($items)) {
+    if (empty($items) || !is_array($items)) {
         $message = 'Please add at least one item to the order';
         $messageType = 'error';
     } else {
@@ -71,10 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $pdo->commit();
-            $message = 'Order created successfully! Order #' . $order_number;
-            $messageType = 'success';
-            // Clear order items after successful submission
-            $orderItems = [];
+            header('Location: /KapengINAMO/orders/my_orders.php?success=order_created');
+            exit;
         } catch(PDOException $e) {
             $pdo->rollBack();
             $message = 'Error creating order: ' . $e->getMessage();
@@ -161,8 +159,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-large">Place Order</button>
+        <button type="button" class="btn btn-primary btn-large" onclick="showOrderConfirmation()">Place Order</button>
     </form>
+</div>
+
+<!-- Order Confirmation Modal -->
+<div id="orderConfirmationModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Confirm Your Order</h3>
+            <span class="close" onclick="closeOrderConfirmation()">&times;</span>
+        </div>
+        <div id="confirmationContent">
+            <p>Loading...</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeOrderConfirmation()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="submitOrder()">Confirm & Place Order</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -241,20 +256,79 @@ function removeItem(index) {
     updateOrderItems();
 }
 
-document.getElementById('orderForm').addEventListener('submit', function(e) {
+function showOrderConfirmation() {
     if (orderItems.length === 0) {
-        e.preventDefault();
         alert('Please select at least one item to order');
         return;
     }
 
+    const customerName = document.getElementById('customer_name').value;
+    const paymentMethod = document.getElementById('payment_method').value;
+    const notes = document.getElementById('notes').value;
+
+    let itemsHtml = '<div class="order-items-list">';
+    let total = 0;
+
+    orderItems.forEach(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        itemsHtml += `
+            <div class="order-item">
+                <div class="item-info">
+                    <strong>${item.name}</strong>
+                    <span>₱${item.price.toFixed(2)} x ${item.quantity}</span>
+                </div>
+                <div class="item-subtotal">₱${subtotal.toFixed(2)}</div>
+            </div>
+        `;
+    });
+
+    itemsHtml += '</div>';
+
+    const summaryHtml = `
+        <div class="order-summary" style="margin-top: 1rem;">
+            <div class="order-summary-row">
+                <span>Customer Name:</span>
+                <strong>${customerName}</strong>
+            </div>
+            <div class="order-summary-row">
+                <span>Payment Method:</span>
+                <span>${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</span>
+            </div>
+            ${notes ? `<div class="order-summary-row"><span>Notes:</span><span>${notes}</span></div>` : ''}
+            <div class="order-summary-row total">
+                <span>Total:</span>
+                <strong>₱${total.toFixed(2)}</strong>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('confirmationContent').innerHTML = itemsHtml + summaryHtml;
+    document.getElementById('orderConfirmationModal').style.display = 'block';
+}
+
+function closeOrderConfirmation() {
+    document.getElementById('orderConfirmationModal').style.display = 'none';
+}
+
+function submitOrder() {
     // Add items as hidden fields
     const itemsInput = document.createElement('input');
     itemsInput.type = 'hidden';
     itemsInput.name = 'items';
     itemsInput.value = JSON.stringify(orderItems);
-    this.appendChild(itemsInput);
-});
+    document.getElementById('orderForm').appendChild(itemsInput);
+
+    // Submit the form
+    document.getElementById('orderForm').submit();
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('orderConfirmationModal');
+    if (event.target === modal) {
+        closeOrderConfirmation();
+    }
+}
 
 // Add form validation
 document.addEventListener('DOMContentLoaded', function() {
@@ -301,4 +375,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<style>
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ddd;
+}
+
+.order-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.order-summary-row.total {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #ddd;
+}
+</style>
+
 <?php require_once '../includes/footer.php'; ?>
