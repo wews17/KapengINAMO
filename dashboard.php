@@ -164,41 +164,68 @@ try {
         <div class="page-header">
             <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['full_name']); ?>! (Staff)</h2>
         </div>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">📦</div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['total_orders'] ?? 0; ?></h3>
-                    <p>Total Orders</p>
+
+        <div class="dashboard-section">
+            <h3>Our Menu</h3>
+            <?php
+            // Get menu items by category
+            $menu_categories = $pdo->query("SELECT * FROM menu_categories ORDER BY name")->fetchAll();
+            $menu_items = [];
+            foreach ($menu_categories as $category) {
+                $items = $pdo->prepare("SELECT * FROM menu_items WHERE category_id = ? AND is_available = 1 ORDER BY name");
+                $items->execute([$category['id']]);
+                $menu_items[$category['id']] = [
+                    'category' => $category,
+                    'items' => $items->fetchAll()
+                ];
+            }
+            ?>
+            <?php if (empty($menu_items)): ?>
+                <p class="no-data">No menu items available.</p>
+            <?php else: ?>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <?php foreach ($menu_items as $category_data): ?>
+                        <?php if (!empty($category_data['items'])): ?>
+                            <button class="filter-btn" data-filter="<?php echo $category_data['category']['id']; ?>">
+                                <?php echo htmlspecialchars($category_data['category']['name']); ?>
+                            </button>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⏳</div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['pending_orders'] ?? 0; ?></h3>
-                    <p>Pending Orders</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">👨‍🍳</div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['preparing_orders'] ?? 0; ?></h3>
-                    <p>Preparing Orders</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-info">
-                    <h3><?php echo $stats['completed_orders'] ?? 0; ?></h3>
-                    <p>Completed Orders</p>
-                </div>
-            </div>
+
+                <?php foreach ($menu_items as $category_data): ?>
+                    <?php if (!empty($category_data['items'])): ?>
+                        <div class="menu-category-section" data-category="<?php echo $category_data['category']['id']; ?>">
+                            <h4><?php echo htmlspecialchars($category_data['category']['name']); ?></h4>
+                            <p class="menu-category-desc"><?php echo htmlspecialchars($category_data['category']['description'] ?? ''); ?></p>
+                            <div class="menu-grid">
+                                <?php foreach ($category_data['items'] as $item): ?>
+                                    <div class="menu-card">
+                                        <?php if (!empty($item['image'])): ?>
+                                            <img src="/KapengINAMO/<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="menu-item-image">
+                                        <?php endif; ?>
+                                        <div class="menu-card-header">
+                                            <h3><?php echo htmlspecialchars($item['name']); ?></h3>
+                                        </div>
+                                        <div class="menu-card-body">
+                                            <p class="menu-description"><?php echo htmlspecialchars($item['description'] ?? 'No description'); ?></p>
+                                        </div>
+                                        <div class="menu-card-footer">
+                                            <span class="menu-price">₱<?php echo number_format($item['price'], 2); ?></span>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
 
         <div class="dashboard-section">
             <h3>Quick Actions</h3>
             <div class="quick-actions">
-
                 <a href="/KapengINAMO/admin/orders.php" class="action-card">
                     <span class="action-icon">📋</span>
                     <h4>Manage Orders</h4>
@@ -206,45 +233,9 @@ try {
                 </a>
                 <a href="/KapengINAMO/menu/index.php" class="action-card">
                     <span class="action-icon">☕</span>
-                    <h4>Manage Menu</h4>
-                    <p>Add or update menu items</p>
+                    <h4>View Menu</h4>
+                    <p>View all menu items</p>
                 </a>
-                <?php if (isAdmin()): ?>
-                <a href="/KapengINAMO/sales/index.php" class="action-card">
-                    <span class="action-icon">📊</span>
-                    <h4>View Sales</h4>
-                    <p>Analyze sales data</p>
-                </a>
-                <?php endif; ?>
-                <a href="/KapengINAMO/settings/index.php" class="action-card">
-                    <span class="action-icon">⚙️</span>
-                    <h4>Settings</h4>
-                    <p>Manage your profile and settings</p>
-                </a>
-            </div>
-        </div>
-
-        <div class="dashboard-section">
-            <h3>Quick Actions</h3>
-            <div class="quick-actions">
-
-                <a href="/KapengINAMO/admin/orders.php" class="action-card">
-                    <span class="action-icon">📋</span>
-                    <h4>Manage Orders</h4>
-                    <p>Process and update orders</p>
-                </a>
-                <a href="/KapengINAMO/menu/index.php" class="action-card">
-                    <span class="action-icon">☕</span>
-                    <h4>Manage Menu</h4>
-                    <p>Add or update menu items</p>
-                </a>
-                <?php if (isAdmin()): ?>
-                <a href="/KapengINAMO/sales/index.php" class="action-card">
-                    <span class="action-icon">📊</span>
-                    <h4>View Sales</h4>
-                    <p>Analyze sales data</p>
-                </a>
-                <?php endif; ?>
                 <a href="/KapengINAMO/settings/index.php" class="action-card">
                     <span class="action-icon">⚙️</span>
                     <h4>Settings</h4>
@@ -322,30 +313,9 @@ try {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
-
-        <div class="dashboard-section">
-            <h3>Quick Actions</h3>
-            <div class="quick-actions">
-
-                <a href="/KapengINAMO/orders/my_orders.php" class="action-card">
-                    <span class="action-icon">📋</span>
-                    <h4>My Orders</h4>
-                    <p>View and manage your orders</p>
-                </a>
-                <a href="/KapengINAMO/orders/feedback.php" class="action-card">
-                    <span class="action-icon">💬</span>
-                    <h4>Give Feedback</h4>
-                    <p>Rate your completed orders</p>
-                </a>
-                <a href="/KapengINAMO/settings/index.php" class="action-card">
-                    <span class="action-icon">⚙️</span>
-                    <h4>Settings</h4>
-                    <p>Manage your profile</p>
-                </a>
-            </div>
-        </div>
     <?php endif; ?>
 
+    <?php if (isAdmin() || isStaff()): ?>
     <div class="dashboard-section">
         <h3>Recent Orders</h3>
         <?php if (empty($recent_orders)): ?>
@@ -383,22 +353,19 @@ try {
                 <div style="margin-top: 1rem; text-align: right;">
                     <a href="/KapengINAMO/admin/orders.php" class="btn btn-primary">View All Orders</a>
                 </div>
-            <?php elseif (isCustomer()): ?>
-                <div style="margin-top: 1rem; text-align: right;">
-                    <a href="/KapengINAMO/orders/my_orders.php" class="btn btn-primary">View All Orders</a>
-                </div>
             <?php endif; ?>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 </div>
 
 <script>
-// Menu filtering functionality for customer dashboard
+// Menu filtering functionality for customer and staff dashboard
 document.addEventListener('DOMContentLoaded', function() {
     const filterButtons = document.querySelectorAll('.filter-btn');
     const categorySections = document.querySelectorAll('.menu-category-section');
 
-    if (filterButtons.length > 0) {
+    if (filterButtons.length > 0 && categorySections.length > 0) {
         filterButtons.forEach(button => {
             button.addEventListener('click', function() {
                 // Remove active class from all buttons

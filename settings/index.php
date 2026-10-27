@@ -17,9 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Validate phone number if provided
-    if ($phone && !preg_match('/^09\d{9}$/', $phone)) {
-        $message = 'Phone number must be 11 digits starting with 09 (e.g., 09123456789)';
+    // Validate phone number (required)
+    if (!$phone || !preg_match('/^09\d{9}$/', $phone)) {
+        $message = 'Phone number is required and must be 11 digits starting with 09 (e.g., 09123456789)';
+        $messageType = 'error';
+    } elseif (!$address) {
+        $message = 'Address is required';
         $messageType = 'error';
     } else {
         try {
@@ -110,11 +113,11 @@ try {
             </div>
             <div class="form-group">
                 <label for="phone">Phone (Philippine format: 09123456789)</label>
-                <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" pattern="^09\d{9}$" placeholder="09123456789">
+                <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" pattern="^09\d{9}$" placeholder="09123456789" required>
             </div>
             <div class="form-group">
                 <label for="address">Address</label>
-                <textarea id="address" name="address" rows="3"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
+                <textarea id="address" name="address" rows="3" required><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
             </div>
 
             <div class="form-section-divider">
@@ -147,13 +150,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const fullNameInput = document.getElementById('full_name');
     const emailInput = document.getElementById('email');
     const phoneInput = document.getElementById('phone');
+    const addressInput = document.getElementById('address');
     const currentPasswordInput = document.getElementById('current_password');
     const newPasswordInput = document.getElementById('new_password');
     const confirmPasswordInput = document.getElementById('confirm_password');
 
     addValidation(fullNameInput, validateFullName, 'Full name must be 2-50 characters (letters and spaces only)');
     addValidation(emailInput, validateEmail, 'Please enter a valid email address');
-    addValidation(phoneInput, validatePhone, 'Phone must be 11 digits starting with 09 (e.g., 09123456789)');
+    addValidation(phoneInput, validatePhone, 'Phone is required and must be 11 digits starting with 09 (e.g., 09123456789)');
+    addValidation(addressInput, function(value) {
+        return value.trim().length > 0;
+    }, 'Address is required');
 
     // Password change validation
     newPasswordInput.addEventListener('input', function() {

@@ -18,6 +18,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
             $stmt->execute([$status, $order_id]);
 
+            // Get order details for notification
+            $stmt = $pdo->prepare("SELECT o.*, u.id as user_id FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ?");
+            $stmt->execute([$order_id]);
+            $order = $stmt->fetch();
+
+            // Create notification for the customer
+            if ($order && $order['user_id']) {
+                $statusMessages = [
+                    'pending' => 'Your order #' . $order['order_number'] . ' is pending.',
+                    'preparing' => 'Your order #' . $order['order_number'] . ' is now being prepared.',
+                    'ready' => 'Your order #' . $order['order_number'] . ' is ready for pickup!',
+                    'completed' => 'Your order #' . $order['order_number'] . ' has been completed. Thank you!',
+                    'cancelled' => 'Your order #' . $order['order_number'] . ' has been cancelled.'
+                ];
+
+                $messageText = $statusMessages[$status] ?? 'Your order #' . $order['order_number'] . ' status has been updated to ' . $status . '.';
+
+                $stmt = $pdo->prepare("INSERT INTO notifications (user_id, order_id, type, message) VALUES (?, ?, 'order_status', ?)");
+                $stmt->execute([$order['user_id'], $order_id, $messageText]);
+            }
+
             // If order is completed, add to sales
             if ($status === 'completed') {
                 $stmt = $pdo->prepare("SELECT total_amount FROM orders WHERE id = ?");
@@ -38,6 +59,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'cancel') {
             $stmt = $pdo->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?");
             $stmt->execute([$order_id]);
+
+            // Get order details for notification
+            $stmt = $pdo->prepare("SELECT o.*, u.id as user_id FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ?");
+            $stmt->execute([$order_id]);
+            $order = $stmt->fetch();
+
+            // Create notification for the customer
+            if ($order && $order['user_id']) {
+                $messageText = 'Your order #' . $order['order_number'] . ' has been cancelled.';
+                $stmt = $pdo->prepare("INSERT INTO notifications (user_id, order_id, type, message) VALUES (?, ?, 'order_cancelled', ?)");
+                $stmt->execute([$order['user_id'], $order_id, $messageText]);
+            }
+
             $message = 'Order cancelled successfully!';
             $messageType = 'success';
         }
@@ -114,6 +148,7 @@ try {
             <p>Completed Orders</p>
         </div>
     </div>
+    <?php if (isAdmin()): ?>
     <div class="stat-card">
         <div class="stat-icon">💰</div>
         <div class="stat-info">
@@ -121,6 +156,7 @@ try {
             <p>Total Revenue</p>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <div class="dashboard-section">

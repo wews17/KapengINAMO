@@ -71,6 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $pdo->commit();
+
+            // Create notification for the customer
+            $messageText = 'Your order #' . $order_number . ' has been placed successfully. Status: Pending';
+            $stmt = $pdo->prepare("INSERT INTO notifications (user_id, order_id, type, message) VALUES (?, ?, 'order_created', ?)");
+            $stmt->execute([$user_id, $order_id, $messageText]);
+
             header('Location: /KapengINAMO/orders/my_orders.php?success=order_created');
             exit;
         } catch(PDOException $e) {

@@ -39,7 +39,7 @@ function uploadMenuImage(): array {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
 
-    if ($action === 'add' && (isAdmin() || isStaff())) {
+    if ($action === 'add' && isAdmin()) {
         $category_id = $_POST['category_id'];
         $name = trim($_POST['name']);
         $description = trim($_POST['description']);
@@ -106,7 +106,7 @@ try {
 <?php require_once '../includes/header.php'; ?>
 <div class="page-header">
     <h2>Menu Management</h2>
-    <?php if (isAdmin() || isStaff()): ?>
+    <?php if (isAdmin()): ?>
         <button class="btn btn-primary" onclick="openModal('add')">Add New Item</button>
     <?php endif; ?>
 </div>

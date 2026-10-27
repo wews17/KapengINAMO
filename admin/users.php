@@ -20,9 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $phone = trim($_POST['phone']);
         $address = trim($_POST['address']);
 
-        // Validate phone number if provided
-        if ($phone && !preg_match('/^09\d{9}$/', $phone)) {
-            $message = 'Phone number must be 11 digits starting with 09 (e.g., 09123456789)';
+        // Validate phone number (required)
+        if (!$phone || !preg_match('/^09\d{9}$/', $phone)) {
+            $message = 'Phone number is required and must be 11 digits starting with 09 (e.g., 09123456789)';
+            $messageType = 'error';
+        } elseif (!$address) {
+            $message = 'Address is required';
             $messageType = 'error';
         } else {
             try {
@@ -45,9 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $phone = trim($_POST['phone']);
         $address = trim($_POST['address']);
 
-        // Validate phone number if provided
-        if ($phone && !preg_match('/^09\d{9}$/', $phone)) {
-            $message = 'Phone number must be 11 digits starting with 09 (e.g., 09123456789)';
+        // Validate phone number (required)
+        if (!$phone || !preg_match('/^09\d{9}$/', $phone)) {
+            $message = 'Phone number is required and must be 11 digits starting with 09 (e.g., 09123456789)';
+            $messageType = 'error';
+        } elseif (!$address) {
+            $message = 'Address is required';
             $messageType = 'error';
         } else {
             try {
@@ -162,11 +168,11 @@ try {
             </div>
             <div class="form-group">
                 <label for="phone">Phone (Philippine format: 09123456789)</label>
-                <input type="text" id="phone" name="phone" pattern="^09\d{9}$" placeholder="09123456789">
+                <input type="text" id="phone" name="phone" pattern="^09\d{9}$" placeholder="09123456789" required>
             </div>
             <div class="form-group">
                 <label for="address">Address</label>
-                <textarea id="address" name="address" rows="2"></textarea>
+                <textarea id="address" name="address" rows="2" required></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Save</button>
         </form>
@@ -236,12 +242,16 @@ function addUserFormValidation() {
     const emailInput = document.getElementById('email');
     const fullNameInput = document.getElementById('full_name');
     const phoneInput = document.getElementById('phone');
+    const addressInput = document.getElementById('address');
     const passwordInput = document.getElementById('password');
 
     addValidation(usernameInput, validateUsername, 'Username must be 3-20 characters (letters, numbers, underscore)');
     addValidation(emailInput, validateEmail, 'Please enter a valid email address');
     addValidation(fullNameInput, validateFullName, 'Full name must be 2-50 characters (letters and spaces only)');
-    addValidation(phoneInput, validatePhone, 'Phone must be 11 digits starting with 09 (e.g., 09123456789)');
+    addValidation(phoneInput, validatePhone, 'Phone is required and must be 11 digits starting with 09 (e.g., 09123456789)');
+    addValidation(addressInput, function(value) {
+        return value.trim().length > 0;
+    }, 'Address is required');
 
     if (passwordInput && passwordInput.offsetParent !== null) {
         addValidation(passwordInput, validatePassword, 'Password must be at least 8 characters');

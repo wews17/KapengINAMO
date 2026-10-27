@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Insert feedback
                 $stmt = $pdo->prepare("INSERT INTO order_feedback (order_id, user_id, rating, comment) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$order_id, $user_id, $rating, $comment]);
-                header('Location: /KapengINAMO/orders/my_orders.php?success=feedback');
+                header('Location: /KapengINAMO/orders/feedback.php?success=feedback');
                 exit;
             }
         }

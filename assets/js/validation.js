@@ -6,9 +6,8 @@ function validateEmail(email) {
     return re.test(email);
 }
 
-// Validate Philippine phone number
+// Validate Philippine phone number (required, exactly 11 digits)
 function validatePhone(phone) {
-    if (!phone) return true; // Optional field
     const re = /^09\d{9}$/;
     return re.test(phone);
 }

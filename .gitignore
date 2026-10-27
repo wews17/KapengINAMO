@@ -1,0 +1,26 @@
+# Uploads directory
+uploads/
+
+# Sensitive files
+add_admin.php
+reset_admin.php
+generate_sample_passwords.php
+
+# SQL files for setup (keep database.sql as it's the main schema)
+add_notifications_table.sql
+sample_data.sql
+create_notifications_table.php
+create_order_feedback_table.php
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
